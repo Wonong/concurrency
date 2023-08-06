@@ -3,9 +3,7 @@ package com.concurrency;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class ConcurrencyImpl implements Concurrency {
@@ -29,6 +27,26 @@ public class ConcurrencyImpl implements Concurrency {
 		List<Integer> result = tasks.parallelStream()
 					.map(MyTask::calculate)
 					.collect(Collectors.toList());
+
+		Instant endTime = Instant.now();
+		printDuration(tasks, startTime, endTime);
+	}
+
+	public void useParallelStreamWithExecutor(List<MyTask> tasks) throws ExecutionException, InterruptedException {
+		System.out.println("Run using a parallel stream with a custom executor. \nWait...");
+
+		final int NUM_OF_THREADS = 1000;
+
+		Instant startTime = Instant.now();
+
+		ForkJoinPool forkJoinPool = new ForkJoinPool(Math.min(tasks.size(), NUM_OF_THREADS));
+
+		List<Integer> result = forkJoinPool.submit(() -> {
+			return tasks
+				.parallelStream()
+				.map(MyTask::calculate)
+				.collect(Collectors.toList());
+		}).get();
 
 		Instant endTime = Instant.now();
 		printDuration(tasks, startTime, endTime);
@@ -83,7 +101,7 @@ public class ConcurrencyImpl implements Concurrency {
 
 	private void printDuration(List<MyTask> tasks, Instant start, Instant end) {
 		Duration timeElapsed = Duration.between(start, end);
-		System.out.printf("Processed %d tasks in %d milliseconds\n", tasks.size(), timeElapsed.toMillis());
+		System.out.printf("Processed %d tasks in %d milliseconds\n\n", tasks.size(), timeElapsed.toMillis());
 	}
 
 }
